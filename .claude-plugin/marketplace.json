@@ -1,0 +1,18 @@
+{
+  "name": "h6s",
+  "description": "headless — 한국 금융 데이터 수집을 위한 AI Agent 도구 모음",
+  "owner": {
+    "name": "Bolta",
+    "email": "h6s@bolta.io"
+  },
+  "plugins": [
+    {
+      "name": "h6s-data",
+      "source": "./",
+      "description": "은행/홈택스/법인카드 데이터 수집 Skill + MCP",
+      "homepage": "https://h6s.ai",
+      "category": "data",
+      "tags": ["finance", "korea", "bank", "hometax", "card", "h6s"]
+    }
+  ]
+}

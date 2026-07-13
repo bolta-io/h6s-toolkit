@@ -1,0 +1,43 @@
+{
+  "name": "@h6s-ai/toolkit",
+  "version": "2.6.8",
+  "description": "headless AI Toolkit — Claude Code plugin + skills + MCP server entry for fetching Korean financial data",
+  "type": "module",
+  "license": "Apache-2.0",
+  "homepage": "https://h6s.ai",
+  "bugs": {
+    "url": "https://h6s.ai",
+    "email": "h6s@bolta.io"
+  },
+  "bin": {
+    "h6s-toolkit": "./bin/h6s-toolkit.js"
+  },
+  "files": [
+    ".claude-plugin/",
+    "skills/",
+    ".mcp.json",
+    "gemini-extension.json",
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "lint": "node scripts/validate-manifests.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2",
+    "vitest": "^3.2.4",
+    "yaml": "^2.7.0"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "h6s": {
+      "command": "npx",
+      "args": ["-y", "@h6s-ai/cli", "mcp"]
+    }
+  }
+}

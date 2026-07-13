@@ -1,0 +1,12 @@
+{
+  "name": "h6s-data",
+  "description": "한국 금융기관(은행/홈택스/법인카드) 데이터 수집 — 입출금내역·세금계산서·현금영수증·법인카드",
+  "version": "2.6.8",
+  "author": {
+    "name": "Bolta",
+    "email": "h6s@bolta.io"
+  },
+  "homepage": "https://h6s.ai",
+  "repository": "https://github.com/bolta-io/h6s-toolkit",
+  "license": "Apache-2.0"
+}

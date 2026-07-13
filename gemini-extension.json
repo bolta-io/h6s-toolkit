@@ -1,0 +1,16 @@
+{
+  "name": "h6s-data",
+  "version": "2.6.8",
+  "description": "한국 금융기관(은행/홈택스) 데이터 수집 — 입출금내역·세금계산서·현금영수증",
+  "mcpServers": {
+    "h6s": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@h6s-ai/cli",
+        "mcp"
+      ]
+    }
+  },
+  "contextFileName": "skills/h6s-data/SKILL.md"
+}

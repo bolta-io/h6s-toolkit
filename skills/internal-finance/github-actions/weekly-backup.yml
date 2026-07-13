@@ -1,0 +1,100 @@
+# 자기 백업 레포(예: <your-org>/finance-backup) 의 .github/workflows/weekly-backup.yml 로 복사해서 사용.
+# Secrets 필요: H6S_API_KEY (필수), SLACK_WEBHOOK_URL (선택)
+# 자세한 절차: ../references/scenario-weekly-backup.md
+
+name: weekly-backup
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # 매주 월요일 00:00 UTC = 09:00 KST
+  workflow_dispatch:
+
+permissions:
+  contents: write  # 자동 commit & push
+
+env:
+  H6S_API_KEY: ${{ secrets.H6S_API_KEY }}
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  INTERNAL_FINANCE_OUTPUT_DIR: ./out
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install h6s CLI
+        run: npm i -g @h6s-ai/cli
+
+      - name: Verify auth
+        run: h6s me
+
+      - name: Resolve week range
+        id: range
+        run: |
+          # 월요일 00:00 UTC cron — 7일 전 = 지난 월요일, 1일 전 = 지난 일요일
+          WEEK_START=$(date -u -d '7 days ago' +%F)
+          WEEK_END=$(date -u -d '1 day ago' +%F)
+          echo "start=$WEEK_START" >> "$GITHUB_OUTPUT"
+          echo "end=$WEEK_END"     >> "$GITHUB_OUTPUT"
+
+      - name: List bank providers
+        id: providers
+        run: |
+          # CB_BANK 유형 자격증명만 추출 (HOMETAX / CARD 제외)
+          PROVIDERS=$(h6s credentials list --output json \
+            | jq -r '[.credentials[] | select(.providerCategory == "BANK") | .providerCode] | unique | join(" ")')
+          echo "list=$PROVIDERS" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch weekly transactions
+        run: |
+          mkdir -p out
+          PROVIDERS="${{ steps.providers.outputs.list }}"
+          if [ -z "$PROVIDERS" ]; then
+            echo "::warning::BANK 자격증명이 없어 입출금내역 수집 스킵"
+            exit 0
+          fi
+          for PROVIDER in $PROVIDERS; do
+            h6s fetch bank.transactions.cb.v1 \
+              --provider "$PROVIDER" \
+              --from "${{ steps.range.outputs.start }}" \
+              --to "${{ steps.range.outputs.end }}" \
+              --output csv \
+              --save "out/weekly-tx-${{ steps.range.outputs.end }}-$PROVIDER.csv" \
+              --quiet --no-color || echo "::warning::$PROVIDER fetch failed"
+          done
+
+      - name: Fetch balance snapshot
+        run: |
+          h6s fetch bank.accounts.cb.v1 \
+            --output csv \
+            --save "out/weekly-balance-${{ steps.range.outputs.end }}.csv" \
+            --quiet --no-color
+
+      - name: Commit and push
+        run: |
+          git config user.name 'h6s-bot'
+          git config user.email 'h6s-bot@users.noreply.github.com'
+          git add out/
+          if git diff --cached --quiet; then
+            echo "변경 없음 — commit skip"
+          else
+            git commit -m "주간 백업 ${{ steps.range.outputs.start }} ~ ${{ steps.range.outputs.end }}"
+            git push
+          fi
+
+      - name: Notify Slack on failure
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -sX POST -H 'Content-Type: application/json' "$SLACK_WEBHOOK_URL" \
+            -d '{"text": "⚠️ weekly-backup-action 실패 — ${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
+
+      - name: Notify Slack on success
+        if: success() && env.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -sX POST -H 'Content-Type: application/json' "$SLACK_WEBHOOK_URL" \
+            -d '{"text": "✅ 주간 백업 완료 ${{ steps.range.outputs.start }} ~ ${{ steps.range.outputs.end }}"}'
